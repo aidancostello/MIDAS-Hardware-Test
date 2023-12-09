@@ -17,11 +17,12 @@
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_BNO08x.h>
 
+// #define MCU_TEST
 // #define ENABLE_BAROMETER
 // #define ENABLE_HIGHG
 // #define ENABLE_LOWG
 // #define ENABLE_LOWGLSM
-// #define ENABLE_MAGNETOMETER
+#define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
 // #define ENABLE_EMMC
 
@@ -52,13 +53,16 @@
 void setup() {
 	Serial.begin(9600);
 
+	while(!Serial);
+
+	delay(1000);
+
 	Serial.println("Starting SPI...");
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
 
     Serial.println("Starting I2C...");
     Wire.begin(I2C_SDA, I2C_SCL);
 
-	delay(1000);
 
 	Serial.println("beginning sensor test");
 
@@ -135,7 +139,7 @@ void setup() {
 	#endif
 
 	#ifdef ENABLE_EMMC
-		if(!SD_MMC.begin()){
+		if(!SD_MMC.begin("/sdcard", false, true, BOARD_MAX_SDMMC_FREQ, 5)){
 			Serial.println("Card Mount Failed");
 			return;
 		}
@@ -170,6 +174,10 @@ void setup() {
 }
 
 void loop() {
+
+	#ifdef MCU_TEST
+		Serial.println("test");
+	#endif
 
 	#ifdef ENABLE_BAROMETER
 		MS.read(12);

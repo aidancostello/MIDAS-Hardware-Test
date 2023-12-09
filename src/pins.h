@@ -31,7 +31,7 @@
 // emmc pins
 #define EMMC_CLK 38
 #define EMMC_CMD 39
-#define EMMC_D0 RX
-#define EMMC_D1 TX
+#define EMMC_D0 44
+#define EMMC_D1 43
 #define EMMC_D2 2
 #define EMMC_D3 42
