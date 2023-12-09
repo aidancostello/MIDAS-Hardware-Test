@@ -19,10 +19,10 @@
 
 // #define MCU_TEST
 // #define ENABLE_BAROMETER
-// #define ENABLE_HIGHG
+#define ENABLE_HIGHG
 // #define ENABLE_LOWG
 // #define ENABLE_LOWGLSM
-#define ENABLE_MAGNETOMETER
+// #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
 // #define ENABLE_EMMC
 
@@ -72,7 +72,7 @@ void setup() {
 	#endif
 
 	#ifdef ENABLE_HIGHG
-		KX.beginSPI(KX134_CS);
+		KX.beginSPI(KX134_CS, 5000000);
 		if (!KX.initialize(DEFAULT_SETTINGS)) {
 			Serial.println("could not init highg");
 			while(1);
@@ -121,7 +121,7 @@ void setup() {
 			while(1);
 		}
 		LIS3MDL.setOperationMode(LIS3MDL_CONTINUOUSMODE);
-		LIS3MDL.setDataRate(LIS3MDL_DATARATE_155_HZ);
+		LIS3MDL.setDataRate(LIS3MDL_DATARATE_5_HZ);
 		LIS3MDL.setRange(LIS3MDL_RANGE_4_GAUSS);
 		Serial.println("magnetometer init successfully");
 	#endif
