@@ -19,12 +19,12 @@
 
 // #define MCU_TEST
 // #define ENABLE_BAROMETER
-#define ENABLE_HIGHG
+// #define ENABLE_HIGHG
 // #define ENABLE_LOWG
 // #define ENABLE_LOWGLSM
 // #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
-// #define ENABLE_EMMC
+#define ENABLE_EMMC
 
 #ifdef ENABLE_BAROMETER
 	MS5611 MS(MS5611_CS);
@@ -139,6 +139,11 @@ void setup() {
 	#endif
 
 	#ifdef ENABLE_EMMC
+		if(!SD_MMC.setPins(EMMC_CLK, EMMC_CMD, EMMC_D0, EMMC_D1, EMMC_D2, EMMC_D3)){
+			Serial.println("Pin change failed!");
+			return;
+		}
+
 		if(!SD_MMC.begin("/sdcard", false, true, BOARD_MAX_SDMMC_FREQ, 5)){
 			Serial.println("Card Mount Failed");
 			return;
