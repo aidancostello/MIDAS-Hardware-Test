@@ -143,8 +143,8 @@ void setup() {
 			Serial.println("Pin change failed!");
 			return;
 		}
-
-		if(!SD_MMC.begin("/sdcard", false, true, BOARD_MAX_SDMMC_FREQ, 5)){
+		// if(!SD_MMC.begin()){
+		if(!SD_MMC.begin("/sdcard", true, false, SDMMC_FREQ_52M, 5)){
 			Serial.println("Card Mount Failed");
 			return;
 		}
@@ -170,10 +170,29 @@ void setup() {
 		Serial.print("SD_MMC Card Size: ");
 		Serial.print(cardSize);
 		Serial.println("MB");
-
-		testFileIO(SD_MMC, "/test.txt");
-		writeFile(SD_MMC, "/balls.txt", "balls");
-		readFile(SD_MMC, "/balls.txt");
+		File f = SD_MMC.open("/midas.txt", FILE_WRITE, true);
+		auto m1 = micros();
+		uint8_t buff[8192];
+		std::fill(buff, buff + 1024, 'q');
+		for(int i = 0; i < 1; i++){
+			f.write(buff, 8192);
+		}
+		Serial.println(micros() - m1);
+		f.close();
+		// listDir(SD_MMC, "/", 0);
+		// createDir(SD_MMC, "/mydir");
+		// listDir(SD_MMC, "/", 0);
+		// removeDir(SD_MMC, "/mydir");
+		// listDir(SD_MMC, "/", 2);
+		// writeFile(SD_MMC, "/hello.txt", "Hello ");
+		// appendFile(SD_MMC, "/hello.txt", "World!\n");
+		// readFile(SD_MMC, "/hello.txt");
+		// deleteFile(SD_MMC, "/foo.txt");
+		// renameFile(SD_MMC, "/hello.txt", "/foo.txt");
+		// readFile(SD_MMC, "/foo.txt");
+		// testFileIO(SD_MMC, "/test.txt");
+		Serial.printf("Total space: %lluMB\n", SD_MMC.totalBytes() / (1024 * 1024));
+		Serial.printf("Used space: %lluMB\n", SD_MMC.usedBytes() / (1024 * 1024));
 	#endif
   
 }
