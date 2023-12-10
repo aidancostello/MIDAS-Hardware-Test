@@ -18,13 +18,13 @@
 #include <Adafruit_BNO08x.h>
 
 // #define MCU_TEST
-// #define ENABLE_BAROMETER
+#define ENABLE_BAROMETER
 // #define ENABLE_HIGHG
 // #define ENABLE_LOWG
 // #define ENABLE_LOWGLSM
 // #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
-#define ENABLE_EMMC
+// #define ENABLE_EMMC
 
 #ifdef ENABLE_BAROMETER
 	MS5611 MS(MS5611_CS);
@@ -48,6 +48,10 @@
 
 #ifdef ENABLE_ORIENTATION
 	Adafruit_BNO08x imu;
+#endif
+
+#ifdef ENABLE_EMMC
+	uint8_t buff[8192];
 #endif
 
 void setup() {
@@ -172,10 +176,9 @@ void setup() {
 		Serial.println("MB");
 		File f = SD_MMC.open("/midas.txt", FILE_WRITE, true);
 		auto m1 = micros();
-		uint8_t buff[8192];
-		std::fill(buff, buff + 1024, 'q');
-		for(int i = 0; i < 1; i++){
-			f.write(buff, 8192);
+		std::fill(buff, buff + 8192, 'q');
+		for(int i = 0; i < 10; i++){
+			f.write(buff, 1024);
 		}
 		Serial.println(micros() - m1);
 		f.close();
