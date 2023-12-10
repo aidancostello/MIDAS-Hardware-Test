@@ -1,0 +1,139 @@
+// --------------------------------------
+// i2c_scanner
+//
+// Modified from https://playground.arduino.cc/Main/I2cScanner/
+// --------------------------------------
+
+#include <Wire.h>
+#include <Arduino.h>
+
+// Set I2C bus to use: Wire, Wire1, etc.
+#define WIRE Wire
+
+
+
+// #define PIN_CFG (uint8_t)0x5
+// #define GPIO_CFG (uint8_t)0x7
+// #define REG_WRITE_CMD (uint8_t)0x08
+// #define REG_READ_CMD (uint8_t)0x10
+// #define GPI_VALUE (uint8_t)0xd
+// #define SYSTEM_STATUS (uint8_t)0x0
+// #define MANUAL_CH_SEL 0x11
+// #define GPO_VALUE 0xb
+#define REG_INPUT0 (uint8_t)0x0
+#define REG_OUTPUT0 (uint8_t)0x2
+#define REG_CONFIG0 (uint8_t)0x6
+
+// #define address 0x14
+
+// int reg_read(uint8_t reg){
+//     WIRE.beginTransmission(address);
+//     WIRE.write(REG_READ_CMD);
+//     WIRE.write(reg);
+//     int e1 = WIRE.endTransmission(true);
+//     int e2 = WIRE.requestFrom(address, 1);
+//     int val = WIRE.read();
+//     if(e2 != 1){
+//         Serial.print("err2");
+//     }
+//     if(e1){
+//         Serial.print("err");
+//     }
+//     return val;
+// }
+
+// void reg_write(uint8_t reg, uint8_t data){
+//     WIRE.beginTransmission(address);
+//     WIRE.write(REG_WRITE_CMD);
+//     WIRE.write(reg);
+//     WIRE.write(data);
+//     int e1 = WIRE.endTransmission(true);
+//     if(e1){
+//         Serial.print("err");
+//     }
+// }
+
+// void device_read(){
+//     WIRE.requestFrom(address, 10, 0);
+//     Serial.println("--");
+//     Serial.print((WIRE.read() & 0xf) * 256 + WIRE.read());
+//     Serial.println("--");
+// }
+
+void setup() {
+  WIRE.begin(2, 1);
+
+  Serial.begin(9600);
+  while (!Serial) {
+    delay(10);
+  }
+
+  WIRE.beginTransmission(0x74);
+  WIRE.write(REG_CONFIG0);
+  WIRE.write(0xff);
+  if(!WIRE.endTransmission(true)){
+    Serial.println("err2");
+  }
+//   WIRE.beginTransmission(0x74);
+//   WIRE.write(REG_OUTPUT0);
+//   WIRE.write(0xaa);
+//   if(!WIRE.endTransmission(true)){
+//     Serial.println("err3");
+//   }
+//   reg_write(MANUAL_CH_SEL, 3);
+//   reg_write(PIN_CFG, 1);
+//   reg_write(GPIO_CFG, 1);
+
+}
+
+void loop() {
+    WIRE.beginTransmission(0x74);
+    WIRE.write(REG_INPUT0);
+    if(WIRE.endTransmission()){
+        Serial.println("err");
+    }
+    Serial.println(WIRE.requestFrom(0x74, 1));
+    int v = WIRE.read();
+    Serial.println(v, HEX);
+    delay(1000);
+    return;
+    // reg_write(GPO_VALUE, 1);
+    // Serial.println(reg_read(GPO_VALUE));
+    // delay(1000);
+    // reg_write(GPO_VALUE, 0);
+    // Serial.println(reg_read(GPO_VALUE));
+    // delay(1000);
+int nDevices = 0;
+    for(int address = 11; address < 127; address++ )
+    {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    WIRE.beginTransmission(address);
+    int error = WIRE.endTransmission();
+
+    if (error == 0)
+    {
+        Serial.print("I2C device found at address 0x");
+        if (address<16)
+        Serial.print("0");
+        Serial.print(address,HEX);
+        Serial.println("  !");
+
+        nDevices++;
+    }
+    else if (error==4)
+    {
+        Serial.print("Unknown error at address 0x");
+        if (address<16)
+        Serial.print("0");
+        Serial.println(address,HEX);
+    }
+    }
+    if (nDevices == 0)
+    Serial.println("No I2C devices found\n");
+    else
+    Serial.println("done\n");
+
+    delay(5000); 
+}
