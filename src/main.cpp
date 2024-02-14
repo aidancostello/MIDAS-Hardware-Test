@@ -25,6 +25,7 @@
 // #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
 // #define ENABLE_EMMC
+// #define ENABLE_ADS
 
 #ifdef ENABLE_BAROMETER
 	MS5611 MS(MS5611_CS);
@@ -52,6 +53,10 @@
 
 #ifdef ENABLE_EMMC
 	uint8_t buff[8192];
+#endif
+
+#ifdef ENABLE_GPIOEXP
+
 #endif
 
 void setup() {
@@ -197,7 +202,40 @@ void setup() {
 		Serial.printf("Total space: %lluMB\n", SD_MMC.totalBytes() / (1024 * 1024));
 		Serial.printf("Used space: %lluMB\n", SD_MMC.usedBytes() / (1024 * 1024));
 	#endif
-  
+
+	#ifdef ENABLE_ADS
+		if (!ADS7138Init()) {
+        	Serial.println(ErrorCode::ContinuityCouldNotBeInitialized);
+    	} else {
+			Serial.println(ErrorCode::NoError);
+		}
+	#endif
+
+	#ifdef ENABLE_GPIOEXP
+		constexpr uint8_t GPIO0_ADDRESS = 0x74;
+		constexpr uint8_t GPIO1_ADDRESS = 0x75;
+		constexpr uint8_t GPIO2_ADDRESS = 0x77;
+		constexpr uint8_t REG_OUTPUT0 = 0x2;
+		constexpr uint8_t REG_OUTPUT1 = 0x3;
+		uint8_t addrs[] = {GPIO0_ADDRESS, GPIO1_ADDRESS, GPIO2_ADDRESS};
+		for(uint8_t addr : addrs){
+			Wire.beginTransmission(GPIO0_ADDRESS);
+			Wire.write(REG_OUTPUT0);
+			if(!Wire.endTransmission()){
+				return false;
+			}
+			int ct = Wire.requestFrom(GPIO0_ADDRESS, 1);
+			if(ct != 1){
+				return false;
+			}
+			int v = Wire.read();
+			//REG_OUTPUT0 is set all ones on power up
+			if(v != 0xff){
+				return false;
+			}
+		}
+		return true;
+	#endif
 }
 
 void loop() {
@@ -287,5 +325,16 @@ void loop() {
 		}
 	#endif
 
+	#ifdef ENABLE_ADS
+		for (int i = 0; i < 8; i++) {
+			Serial.print("Address " + i + ": ");
+			Serial.print(adcAnalogRead(ADCAddress{i}).value + ", ");
+		}
+		Serial.println();
+	#endif
+
+	#ifdef ENABLE_GPIOEXP
+
+	#endif
 	delay(500);
 }
