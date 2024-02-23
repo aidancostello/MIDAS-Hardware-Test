@@ -9,7 +9,7 @@
 #define MS5611_CS 14
 
 // gyro chip select
-#define LSM6DS3_CS 46
+#define LSM6DS3_CS 3
 
 // high g chip select
 #define KX134_CS 10
@@ -35,3 +35,7 @@
 #define EMMC_D1 43
 #define EMMC_D2 2
 #define EMMC_D3 42
+
+// CAN pins
+#define CAN_CS 45
+#define RFM96W_CS 1

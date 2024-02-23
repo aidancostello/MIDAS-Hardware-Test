@@ -13,18 +13,18 @@
 #include <MS5611.h>
 #include <SparkFun_Qwiic_KX13X.h>
 #include <Adxl355.h>
-#include <SparkFunLSM6DS3.h>
+#include <Arduino_LSM6DS3.h>
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_BNO08x.h>
 
 // #define MCU_TEST
-#define ENABLE_BAROMETER
+// #define ENABLE_BAROMETER
 // #define ENABLE_HIGHG
 // #define ENABLE_LOWG
 // #define ENABLE_LOWGLSM
 // #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
-// #define ENABLE_EMMC
+#define ENABLE_EMMC
 // #define ENABLE_ADS
 
 #ifdef ENABLE_BAROMETER
@@ -40,7 +40,7 @@
 #endif
 
 #ifdef ENABLE_LOWGLSM
-	LSM6DS3 LSM(SPI_MODE, LSM6DS3_CS);
+	LSM6DS3Class LSM(SPI, LSM6DS3_CS, 46);
 #endif
 
 #ifdef ENABLE_MAGNETOMETER
@@ -74,6 +74,25 @@ void setup() {
 
 
 	Serial.println("beginning sensor test");
+
+	pinMode(MS5611_CS, OUTPUT);
+	pinMode(LSM6DS3_CS, OUTPUT);
+	pinMode(KX134_CS, OUTPUT);
+	pinMode(ADXL355_CS, OUTPUT);
+	pinMode(LIS3MDL_CS, OUTPUT);
+	pinMode(BNO086_CS, OUTPUT);
+	pinMode(CAN_CS, OUTPUT);
+	pinMode(RFM96W_CS, OUTPUT);
+
+	digitalWrite(MS5611_CS, HIGH);
+	digitalWrite(LSM6DS3_CS, HIGH);
+	digitalWrite(KX134_CS, HIGH);
+	digitalWrite(ADXL355_CS, HIGH);
+	digitalWrite(LIS3MDL_CS, HIGH);
+	digitalWrite(BNO086_CS, HIGH);
+	digitalWrite(CAN_CS, HIGH);
+	digitalWrite(RFM96W_CS, HIGH);
+
 
 	#ifdef ENABLE_BAROMETER
 		MS.init();
@@ -153,7 +172,7 @@ void setup() {
 			return;
 		}
 		// if(!SD_MMC.begin()){
-		if(!SD_MMC.begin("/sdcard", true, false, SDMMC_FREQ_52M, 5)){
+		if(!SD_MMC.begin("/sdcard", false, true, SDMMC_FREQ_52M, 5)){
 			Serial.println("Card Mount Failed");
 			return;
 		}
@@ -183,7 +202,7 @@ void setup() {
 		auto m1 = micros();
 		std::fill(buff, buff + 8192, 'q');
 		for(int i = 0; i < 10; i++){
-			f.write(buff, 1024);
+			f.write(buff, 8192);
 		}
 		Serial.println(micros() - m1);
 		f.close();
@@ -278,18 +297,22 @@ void loop() {
 	#endif
 
 	#ifdef ENABLE_LOWGLSM
+		float ax, ay, az, gx, gy, gz;
+		LSM.readAcceleration(ax, ay, az);
+		LSM.readGyroscope(gx, gy, gz);
+
 		Serial.print("gx: ");
-		Serial.print(LSM.readFloatGyroX());
+		Serial.print(gx);
 		Serial.print(" gy: ");
-		Serial.print(LSM.readFloatGyroY());
+		Serial.print(gy);
 		Serial.print(" gz: ");
-		Serial.print(LSM.readFloatGyroZ());
+		Serial.print(gz);
 		Serial.print(" ax: ");
-		Serial.print(LSM.readFloatAccelX());
+		Serial.print(ax);
 		Serial.print(" ay: ");
-		Serial.print(LSM.readFloatAccelY());
+		Serial.print(ay);
 		Serial.print(" az: ");
-		Serial.println(LSM.readFloatAccelZ());
+		Serial.println(az);
 	#endif
 
 	#ifdef ENABLE_MAGNETOMETER
@@ -338,3 +361,4 @@ void loop() {
 	#endif
 	delay(500);
 }
+
