@@ -11,7 +11,11 @@
 #include "bno_functions.h"
 #include "emmc_functions.h"
 #include "TCAL9539.h"
+<<<<<<< HEAD
 #include "teseo_liv3f_class.h"
+=======
+#include "ads7138-q1.h"
+>>>>>>> f18adf67f2550d189ea4294ab3946ea18310447e
 
 #include <MS5611.h>
 #include <SparkFun_Qwiic_KX13X.h>
@@ -28,9 +32,9 @@
 // #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
 // #define ENABLE_EMMC
-// #define ENABLE_ADS
+#define ENABLE_ADS
 // #define ENABLE_GPIOEXP
-#define ENABLE_GPS
+// #define ENABLE_GPS
 
 
 #ifdef ENABLE_BAROMETER
@@ -66,7 +70,37 @@
 #endif
 
 #ifdef ENABLE_GPS
+<<<<<<< HEAD
 TeseoLIV3F teseo(&Wire, GPS_RESET, GPS_ENABLE);
+=======
+char buff[32];
+int idx = 0;
+//MicroNMEA library structures
+char nmeaBuffer[100];
+MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
+
+void gpsHardWareReset() {
+	gpioDigitalWrite(GpioAddress(2, 017), LOW);
+	delay(50);
+	gpioDigitalWrite(GpioAddress(2, 017), HIGH);
+	delay(2000);
+}
+
+void readI2C(char *inBuff)
+{
+   Wire.beginTransmission(GNSS_I2C_LOCATION);
+   Wire.write((uint8_t) 0xff);
+   Wire.endTransmission(false);
+   Wire.requestFrom((uint8_t)GNSS_I2C_LOCATION, (uint8_t) 32);
+   int i = 0;
+   while (Wire.available())
+   {
+      inBuff[i]= Wire.read();
+      i++;
+   }
+}
+
+>>>>>>> f18adf67f2550d189ea4294ab3946ea18310447e
 #endif
 
 void setup() {
@@ -251,9 +285,9 @@ void setup() {
 
 	#ifdef ENABLE_ADS
 		if (!ADS7138Init()) {
-        	Serial.println(ErrorCode::ContinuityCouldNotBeInitialized);
+        	Serial.println("could not init ads");
     	} else {
-			Serial.println(ErrorCode::NoError);
+			Serial.println("ads init successfully");
 		}
 	#endif
 
@@ -422,7 +456,9 @@ void loop() {
 
 	#ifdef ENABLE_ADS
 		for (int i = 0; i < 8; i++) {
-			Serial.print("Address " + i + ": ");
+			Serial.print("Address ");
+			Serial.print(i);
+			Serial.print(": ");
 			Serial.print(adcAnalogRead(ADCAddress{i}).value + ", ");
 		}
 		Serial.println();
@@ -451,8 +487,8 @@ void loop() {
 	#endif
 
 	#ifdef ENABLE_GPIOEXP
-
 	#endif
+
 	delay(500);
 }
 
