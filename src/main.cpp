@@ -11,11 +11,8 @@
 #include "bno_functions.h"
 #include "emmc_functions.h"
 #include "TCAL9539.h"
-<<<<<<< HEAD
 #include "teseo_liv3f_class.h"
-=======
 #include "ads7138-q1.h"
->>>>>>> f18adf67f2550d189ea4294ab3946ea18310447e
 
 #include <MS5611.h>
 #include <SparkFun_Qwiic_KX13X.h>
