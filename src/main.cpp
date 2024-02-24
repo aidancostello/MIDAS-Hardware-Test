@@ -67,37 +67,7 @@
 #endif
 
 #ifdef ENABLE_GPS
-<<<<<<< HEAD
 TeseoLIV3F teseo(&Wire, GPS_RESET, GPS_ENABLE);
-=======
-char buff[32];
-int idx = 0;
-//MicroNMEA library structures
-char nmeaBuffer[100];
-MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
-
-void gpsHardWareReset() {
-	gpioDigitalWrite(GpioAddress(2, 017), LOW);
-	delay(50);
-	gpioDigitalWrite(GpioAddress(2, 017), HIGH);
-	delay(2000);
-}
-
-void readI2C(char *inBuff)
-{
-   Wire.beginTransmission(GNSS_I2C_LOCATION);
-   Wire.write((uint8_t) 0xff);
-   Wire.endTransmission(false);
-   Wire.requestFrom((uint8_t)GNSS_I2C_LOCATION, (uint8_t) 32);
-   int i = 0;
-   while (Wire.available())
-   {
-      inBuff[i]= Wire.read();
-      i++;
-   }
-}
-
->>>>>>> f18adf67f2550d189ea4294ab3946ea18310447e
 #endif
 
 void setup() {
