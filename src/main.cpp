@@ -5,6 +5,7 @@
 #include <Wire.h>
 #include <FS.h>
 #include <SD_MMC.h>
+#include <MicroNMEA.h>
 
 #include "pins.h"
 #include "bno_functions.h"
@@ -28,6 +29,7 @@
 // #define ENABLE_EMMC
 // #define ENABLE_ADS
 // #define ENABLE_GPIOEXP
+#define ENABLE_GPS
 
 
 #ifdef ENABLE_BAROMETER
@@ -61,6 +63,36 @@
 #ifdef ENABLE_GPIOEXP
 
 #endif
+
+#ifdef ENABLE_GPS
+char buff[32];
+int idx = 0;
+//MicroNMEA library structures
+char nmeaBuffer[100];
+MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
+
+#endif
+
+void gpsHardWareReset() {
+	gpioDigitalWrite(GpioAddress(2, 017), LOW);
+	delay(50);
+	gpioDigitalWrite(GpioAddress(2, 017), HIGH);
+	delay(2000);
+}
+
+void readI2C(char *inBuff)
+{
+   Wire.beginTransmission(GNSS_I2C_LOCATION);
+   Wire.write((uint8_t) 0xff);
+   Wire.endTransmission(false);
+   Wire.requestFrom((uint8_t)GNSS_I2C_LOCATION, (uint8_t) 32);
+   int i = 0;
+   while (Wire.available())
+   {
+      inBuff[i]= Wire.read();
+      i++;
+   }
+}
 
 void setup() {
 	Serial.begin(9600);
@@ -292,7 +324,11 @@ void setup() {
 	#endif
 
 
-	
+	#ifdef ENABLE_GPS
+		gpioPinMode(GpioAddress(2, 017), OUTPUT);
+		gpsHardWareReset();
+		Wire.begin();
+	#endif
 }
 
 void loop() {
@@ -414,6 +450,26 @@ void loop() {
 		Serial.println();
 	#endif
 
+	#ifdef ENABLE_GPS
+	#endif
+	char c ;
+      if (idx == 0)
+      {
+         readI2C(buff);
+         delay(1);
+      }
+      //Fetch the character one by one
+      c = buff[idx];
+      idx++;
+      idx %= 32;
+      //If we have a valid character pass it to the library
+      if ((uint8_t) c != 0xFF)
+      {
+         Serial.print(c);
+         nmea.process(c);
+      }
+	 // Serial.print("Valid fix: ");
+     // Serial.println(nmea.isValid() ? "yes" : "no");
 	#ifdef ENABLE_GPIOEXP
 
 	#endif
