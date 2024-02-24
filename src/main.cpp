@@ -11,6 +11,7 @@
 #include "bno_functions.h"
 #include "emmc_functions.h"
 #include "TCAL9539.h"
+#include "teseo_liv3f_class.h"
 
 #include <MS5611.h>
 #include <SparkFun_Qwiic_KX13X.h>
@@ -65,34 +66,8 @@
 #endif
 
 #ifdef ENABLE_GPS
-char buff[32];
-int idx = 0;
-//MicroNMEA library structures
-char nmeaBuffer[100];
-MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
-
+TeseoLIV3F teseo(&Wire, GPS_RESET, GPS_ENABLE);
 #endif
-
-void gpsHardWareReset() {
-	gpioDigitalWrite(GpioAddress(2, 017), LOW);
-	delay(50);
-	gpioDigitalWrite(GpioAddress(2, 017), HIGH);
-	delay(2000);
-}
-
-void readI2C(char *inBuff)
-{
-   Wire.beginTransmission(GNSS_I2C_LOCATION);
-   Wire.write((uint8_t) 0xff);
-   Wire.endTransmission(false);
-   Wire.requestFrom((uint8_t)GNSS_I2C_LOCATION, (uint8_t) 32);
-   int i = 0;
-   while (Wire.available())
-   {
-      inBuff[i]= Wire.read();
-      i++;
-   }
-}
 
 void setup() {
 	Serial.begin(9600);
@@ -325,9 +300,12 @@ void setup() {
 
 
 	#ifdef ENABLE_GPS
-		gpioPinMode(GpioAddress(2, 017), OUTPUT);
-		gpsHardWareReset();
-		Wire.begin();
+	Serial.println("Initing GPS");
+	if (!teseo.init()) {
+		Serial.println("Failed to init GPS");
+	} else {
+		Serial.println("Successfully inited GPS");
+	}
 	#endif
 }
 
@@ -451,25 +429,27 @@ void loop() {
 	#endif
 
 	#ifdef ENABLE_GPS
+	    teseo.update();
+		GPGGA_Info_t gpgga_message = teseo.getGPGGAData();
+		GPRMC_Info_t gprmc_message = teseo.getGPRMCData();
+		float lat = gpgga_message.xyz.lat;
+		float lon = gpgga_message.xyz.lon;
+		float alt = gpgga_message.xyz.alt;
+		float v = gprmc_message.speed;
+		uint16_t sat_count = gpgga_message.sats;
+
+		Serial.print("Satellite Fixes: ");
+		Serial.print(sat_count);
+		Serial.print(" Latitude: ");
+		Serial.print(lat);
+		Serial.print(" Longitude: ");
+		Serial.print(lon);
+		Serial.print(" Altitude: ");
+		Serial.print(alt);
+		Serial.print(" Velocity: ");
+		Serial.println(v);
 	#endif
-	char c ;
-      if (idx == 0)
-      {
-         readI2C(buff);
-         delay(1);
-      }
-      //Fetch the character one by one
-      c = buff[idx];
-      idx++;
-      idx %= 32;
-      //If we have a valid character pass it to the library
-      if ((uint8_t) c != 0xFF)
-      {
-         Serial.print(c);
-         nmea.process(c);
-      }
-	 // Serial.print("Valid fix: ");
-     // Serial.println(nmea.isValid() ? "yes" : "no");
+
 	#ifdef ENABLE_GPIOEXP
 
 	#endif

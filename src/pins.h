@@ -42,3 +42,5 @@
 
 // GPS I2C location
 #define GNSS_I2C_LOCATION 0x3A
+#define GPS_RESET 017
+#define GPS_ENABLE 0

@@ -216,7 +216,7 @@ GNSS_StatusTypeDef TeseoLIV3F::I2CRead(uint16_t RegisterAddr, uint8_t* pBuffer, 
       i++;
    }
 
-
+   Serial.println((char*)pBuffer);
    return (GNSS_StatusTypeDef) status;
 }
 
@@ -625,7 +625,6 @@ ParseStatus_t TeseoLIV3F::NMEA_ParseGPRMC(GPRMC_Info_t *pGPRMCInfo, uint8_t NMEA
 
    if(NMEA != NULL)
    {
-
       /* clear the app[][] buffer */
       for (int8_t i = 0; i < MAX_MSG_LEN; i++)
       {
