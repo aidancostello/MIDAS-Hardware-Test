@@ -9,10 +9,11 @@
 #include "pins.h"
 #include "bno_functions.h"
 #include "emmc_functions.h"
+#include "TCAL9539.h"
 
 #include <MS5611.h>
 #include <SparkFun_Qwiic_KX13X.h>
-#include <Adxl355.h>
+#include <PL_ADXL355.h>
 #include <Arduino_LSM6DS3.h>
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_BNO08x.h>
@@ -24,8 +25,10 @@
 // #define ENABLE_LOWGLSM
 // #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
-#define ENABLE_EMMC
+// #define ENABLE_EMMC
 // #define ENABLE_ADS
+// #define ENABLE_GPIOEXP
+
 
 #ifdef ENABLE_BAROMETER
 	MS5611 MS(MS5611_CS);
@@ -36,7 +39,7 @@
 #endif
 
 #ifdef ENABLE_LOWG
-	Adxl355 sensor(ADXL355_CS);
+	PL::ADXL355 sensor(ADXL355_CS);
 #endif
 
 #ifdef ENABLE_LOWGLSM
@@ -48,7 +51,7 @@
 #endif
 
 #ifdef ENABLE_ORIENTATION
-	Adafruit_BNO08x imu;
+	Adafruit_BNO08x imu(07);
 #endif
 
 #ifdef ENABLE_EMMC
@@ -100,7 +103,7 @@ void setup() {
 	#endif
 
 	#ifdef ENABLE_HIGHG
-		KX.beginSPI(KX134_CS, 5000000);
+		KX.beginSPI(KX134_CS, 100000);
 		if (!KX.initialize(DEFAULT_SETTINGS)) {
 			Serial.println("could not init highg");
 			while(1);
@@ -114,24 +117,30 @@ void setup() {
 	#endif
 
 	#ifdef ENABLE_LOWG
-		sensor.start();
-		if (sensor.isDeviceRecognized()){
-			sensor.initializeSensor(Adxl355::RANGE_VALUES::RANGE_2G, Adxl355::ODR_LPF::ODR_1000_AND_250);
-			if (Adxl355::RANGE_VALUES::RANGE_2G != sensor.getRange()){
-				Serial.println("could not set range lowg");
-				while(1);
-			}
+		Serial.println("Before sensor.start");
+		sensor.begin();
+		Serial.println("Initializing lowg");
+		sensor.enableMeasurement();
 
-			if (Adxl355::ODR_LPF::ODR_4000_AND_1000 != sensor.getOdrLpf()){
-				Serial.println("could not set odrlpf lowg");
-				while(1);
-			}
-		}
-		else{
-			Serial.println("could not init lowg");
-			while(1);
-		}
-   		sensor.calibrateSensor(1);
+		// if (sensor.isDeviceRecognized()){
+		// 	Serial.println("Device is recognized");
+		// 	sensor.initializeSensor(Adxl355::RANGE_VALUES::RANGE_2G, Adxl355::ODR_LPF::ODR_1000_AND_250);
+		// 	Serial.println("Sensor is initialized");
+		// 	if (Adxl355::RANGE_VALUES::RANGE_2G != sensor.getRange()){
+		// 		Serial.println("could not set range lowg");
+		// 		while(1);
+		// 	}
+
+		// 	if (Adxl355::ODR_LPF::ODR_4000_AND_1000 != sensor.getOdrLpf()){
+		// 		Serial.println("could not set odrlpf lowg");
+		// 		while(1);
+		// 	}
+		// }
+		// else{
+		// 	Serial.println("could not init lowg");
+		// 	while(1);
+		// }
+   		// sensor.calibrateSensor(1);
 		Serial.println("lowg init successfully");
 	#endif
 
@@ -155,6 +164,16 @@ void setup() {
 	#endif
 
 	#ifdef ENABLE_ORIENTATION
+
+		/*if (!TCAL9539Init()) {
+			Serial.println("Failed to initialize TCAL9539!");
+			// while(1){ };
+		}
+
+		Serial.println("TCAL9539 initialized successfully!");*/
+		Serial.println("Delaying");
+		delay(5000);
+
 		if (!imu.begin_SPI(BNO086_CS, BNO086_INT)) {
 			Serial.println("could not init orientation");
 			while(1);
@@ -164,6 +183,7 @@ void setup() {
 			while(1);
 		}
 		Serial.println("orientation init successfully");
+		
 	#endif
 
 	#ifdef ENABLE_EMMC
@@ -231,7 +251,7 @@ void setup() {
 	#endif
 
 	#ifdef ENABLE_GPIOEXP
-		constexpr uint8_t GPIO0_ADDRESS = 0x74;
+		/*constexpr uint8_t GPIO0_ADDRESS = 0x74;
 		constexpr uint8_t GPIO1_ADDRESS = 0x75;
 		constexpr uint8_t GPIO2_ADDRESS = 0x77;
 		constexpr uint8_t REG_OUTPUT0 = 0x2;
@@ -253,11 +273,49 @@ void setup() {
 				return false;
 			}
 		}
-		return true;
+		return true;*/
+
+		if (!TCAL9539Init()) {
+			Serial.println("Failed to initialize TCAL9539!");
+			// while(1){ };
+		}
+
+		Serial.println("TCAL9539 initialized successfully!");
+
+		gpioPinMode(GpioAddress(2, 013), OUTPUT);
+		gpioPinMode(GpioAddress(2, 014), OUTPUT);
+		gpioPinMode(GpioAddress(2, 015), OUTPUT);
+		gpioPinMode(GpioAddress(2, 016), OUTPUT);
+
+		Serial.println("TCAL9539 successfully set pinmode!");
+
 	#endif
+
+
+	
 }
 
 void loop() {
+
+	#ifdef ENABLE_GPIOEXP
+
+		gpioDigitalWrite(GpioAddress(2, 013), HIGH);
+		delay(100);
+		gpioDigitalWrite(GpioAddress(2, 014), HIGH);
+		delay(100);
+		gpioDigitalWrite(GpioAddress(2, 015), HIGH);
+		delay(100);
+		gpioDigitalWrite(GpioAddress(2, 016), HIGH);
+		delay(100);
+		Serial.println("Looped high");
+		gpioDigitalWrite(GpioAddress(2, 013), LOW);
+		gpioDigitalWrite(GpioAddress(2, 014), LOW);
+		gpioDigitalWrite(GpioAddress(2, 015), LOW);
+		gpioDigitalWrite(GpioAddress(2, 016), LOW);
+		Serial.println("Looped");
+		delay(500);
+		
+	#endif
 
 	#ifdef MCU_TEST
 		Serial.println("test");
@@ -287,7 +345,7 @@ void loop() {
 	#endif
 
 	#ifdef ENABLE_LOWG
-		auto data_adxl = sensor.getAccel();
+		auto data_adxl = sensor.getAccelerations();
 		Serial.print("ax: ");
 		Serial.print(data_adxl.x);
 		Serial.print(" ay: ");

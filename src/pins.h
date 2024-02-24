@@ -15,7 +15,7 @@
 #define KX134_CS 10
 
 // low g chip select
-#define ADXL355_CS 3
+#define ADXL355_CS 0
 
 // magnetometer chip select
 #define LIS3MDL_CS 9
