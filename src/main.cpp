@@ -31,7 +31,7 @@
 // #define ENABLE_EMMC
 #define ENABLE_ADS
 // #define ENABLE_GPIOEXP
-// #define ENABLE_GPS
+ #define ENABLE_GPS
 
 
 #ifdef ENABLE_BAROMETER
@@ -435,14 +435,23 @@ void loop() {
 	    teseo.update();
 		GPGGA_Info_t gpgga_message = teseo.getGPGGAData();
 		GPRMC_Info_t gprmc_message = teseo.getGPRMCData();
+		GSV_Info_t gsv_message = teseo.getGSVData();
 		float lat = gpgga_message.xyz.lat;
 		float lon = gpgga_message.xyz.lon;
 		float alt = gpgga_message.xyz.alt;
 		float v = gprmc_message.speed;
 		uint16_t sat_count = gpgga_message.sats;
 
-		Serial.print("Satellite Fixes: ");
+		Serial.print("Time: ");
+		Serial.print(gpgga_message.utc.hh);
+		Serial.print(":");
+		Serial.print(gpgga_message.utc.mm);
+		Serial.print(":");
+		Serial.print(gpgga_message.utc.ss);
+		Serial.print(" Satellite Fixes: ");
 		Serial.print(sat_count);
+		Serial.print("/");
+		Serial.print(gsv_message.tot_sats);
 		Serial.print(" Latitude: ");
 		Serial.print(lat);
 		Serial.print(" Longitude: ");
