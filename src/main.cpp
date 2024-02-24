@@ -11,6 +11,7 @@
 #include "bno_functions.h"
 #include "emmc_functions.h"
 #include "TCAL9539.h"
+#include "ads7138-q1.h"
 
 #include <MS5611.h>
 #include <SparkFun_Qwiic_KX13X.h>
@@ -27,9 +28,9 @@
 // #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
 // #define ENABLE_EMMC
-// #define ENABLE_ADS
+#define ENABLE_ADS
 // #define ENABLE_GPIOEXP
-#define ENABLE_GPS
+// #define ENABLE_GPS
 
 
 #ifdef ENABLE_BAROMETER
@@ -71,8 +72,6 @@ int idx = 0;
 char nmeaBuffer[100];
 MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
 
-#endif
-
 void gpsHardWareReset() {
 	gpioDigitalWrite(GpioAddress(2, 017), LOW);
 	delay(50);
@@ -93,6 +92,8 @@ void readI2C(char *inBuff)
       i++;
    }
 }
+
+#endif
 
 void setup() {
 	Serial.begin(9600);
@@ -276,9 +277,9 @@ void setup() {
 
 	#ifdef ENABLE_ADS
 		if (!ADS7138Init()) {
-        	Serial.println(ErrorCode::ContinuityCouldNotBeInitialized);
+        	Serial.println("could not init ads");
     	} else {
-			Serial.println(ErrorCode::NoError);
+			Serial.println("ads init successfully");
 		}
 	#endif
 
@@ -444,14 +445,15 @@ void loop() {
 
 	#ifdef ENABLE_ADS
 		for (int i = 0; i < 8; i++) {
-			Serial.print("Address " + i + ": ");
+			Serial.print("Address ");
+			Serial.print(i);
+			Serial.print(": ");
 			Serial.print(adcAnalogRead(ADCAddress{i}).value + ", ");
 		}
 		Serial.println();
 	#endif
 
 	#ifdef ENABLE_GPS
-	#endif
 	char c ;
       if (idx == 0)
       {
@@ -470,9 +472,8 @@ void loop() {
       }
 	 // Serial.print("Valid fix: ");
      // Serial.println(nmea.isValid() ? "yes" : "no");
-	#ifdef ENABLE_GPIOEXP
-
 	#endif
+
 	delay(500);
 }
 
