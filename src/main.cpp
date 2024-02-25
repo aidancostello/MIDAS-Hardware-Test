@@ -426,7 +426,7 @@ void loop() {
 			Serial.print("Address ");
 			Serial.print(i);
 			Serial.print(": ");
-			Serial.print(adcAnalogRead(ADCAddress{i}).value + ", ");
+			Serial.println((adcAnalogRead(ADCAddress{i}).value) * 3.3 / 4096);
 		}
 		Serial.println();
 	#endif
