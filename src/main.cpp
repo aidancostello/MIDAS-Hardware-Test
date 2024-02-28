@@ -28,9 +28,10 @@
 // #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
 // #define ENABLE_EMMC
-#define ENABLE_ADS
+// #define ENABLE_ADS
 // #define ENABLE_GPIOEXP
 // #define ENABLE_GPS
+// #define ENABLE_ADV_GPIO_TEST
 
 
 #ifdef ENABLE_BAROMETER
@@ -93,6 +94,22 @@ void readI2C(char *inBuff)
    }
 }
 
+#endif
+
+#ifdef ENABLE_ADV_GPIO_TEST
+enum class State {
+  WAITING,
+  ACTIVATE,
+  ACTIVE,
+};
+
+State currentState = State::WAITING;
+
+int expander = 0;
+int channel = 1;
+int highlow = 0;
+bool bypass = false;
+String bypassMessage;
 #endif
 
 void setup() {
@@ -330,6 +347,16 @@ void setup() {
 		gpsHardWareReset();
 		Wire.begin();
 	#endif
+
+	#ifdef ENABLE_ADV_GPIO_TEST
+	delay(1000);
+	Serial.println("--------------------------------------------------------------------------");
+	Serial.println("To use, enter into terminal in the format \"expander, channel, signal\"");
+	Serial.println("Valid expanders: 0-2, valid channels: 1-16, valid signals: 0/1");
+	if (!TCAL9539Init()) {
+		Serial.println("Failed to initialize TCAL9539!");
+	}
+	#endif
 }
 
 void loop() {
@@ -474,6 +501,59 @@ void loop() {
      // Serial.println(nmea.isValid() ? "yes" : "no");
 	#endif
 
+	#ifdef ENABLE_ADV_GPIO_TEST // serial monitor format: "expander, channel, signal", only accepts this format, unknown behavior otherwise (todo)
+	switch (currentState) {
+		case State::WAITING:
+			if (Serial.available() > 0 || bypass) {
+				String message;
+				if (bypass) {
+					message = bypassMessage;
+				} else {
+					message = Serial.readStringUntil('\n');
+				}
+				int numbers[3];
+				// this for loop strictly only parses format "num, num, num"
+				for (int i = 0; i < 2; i++) {
+					int commaIndex = message.indexOf(",");
+					String numberString = message.substring(0, commaIndex);
+					numbers[i] = numberString.toInt();
+					message.remove(0, commaIndex + 2);
+				}
+				String numberString = message.substring(0, message.length());
+				numbers[2] = numberString.toInt();
+				message.remove(0, message.length());
+				expander = numbers[0];
+				channel = numbers[1];
+				highlow = numbers[2];
+				Serial.println("expander: " + String(expander) + ", channel: " + String(channel) + ", signal: " + String(highlow));
+				currentState = State::ACTIVATE;
+				break;
+			}
+			break;
+		case State::ACTIVATE:
+			gpioPinMode(GpioAddress(expander, channel), OUTPUT);
+			delay(100);
+			gpioDigitalWrite(GpioAddress(expander, channel), highlow);
+			currentState = State::ACTIVE;
+		case State::ACTIVE:
+			if (Serial.available() > 0) {
+				String message = Serial.readStringUntil('\n');
+				if (message.equals("WAIT")) {
+					Serial.println("State: WAIT");
+					currentState = State::WAITING;
+					bypass = false;
+					//   gpioDigitalWrite(GpioAddress(expander, channel), 0); // uncomment to reset channel back to zero after use
+					break;
+				} else {
+					currentState = State::WAITING;
+					bypass = true;
+					bypassMessage = message;
+					//   gpioDigitalWrite(GpioAddress(expander, channel), 0); // uncomment to reset channel back to zero after use
+				}
+			}
+			break;
+	}
+	#endif
 	delay(500);
 }
 
