@@ -6,6 +6,7 @@
 #include <FS.h>
 #include <SD_MMC.h>
 #include <MicroNMEA.h>
+#include <RH_RF95.h>
 
 #include "pins.h"
 #include "bno_functions.h"
@@ -68,6 +69,11 @@
 
 #ifdef ENABLE_GPS
 TeseoLIV3F teseo(&Wire, GPS_RESET, GPS_ENABLE);
+#endif
+
+#ifdef ENABLE_TElEMETRY
+	RH_RF95 rf95;
+
 #endif
 
 void setup() {
@@ -308,6 +314,12 @@ void setup() {
 		Serial.println("Successfully inited GPS");
 	}
 	#endif
+
+	#ifdef ENABLE_TElEMETRY
+		rf95.init();
+		rf95.setFrequency(915.0);
+		rf95.setTxPower(23, false);
+	#endif
 }
 
 void loop() {
@@ -463,6 +475,27 @@ void loop() {
 	#endif
 
 	#ifdef ENABLE_GPIOEXP
+	#endif
+
+	#ifdef ENABLE_TElEMETRY
+	/ Define the payload as a string
+		const char* payload = "hi";
+
+		// Assuming led_pin and led_state are defined somewhere in your code
+		// Assuming THREAD_SLEEP is a macro or function defined somewhere in your code
+		// Assuming rf95 is an instance of RH_RF95
+
+		// Use static_assert to check the size of the payload
+		static_assert(strlen(payload) <= RH_RF95_MAX_MESSAGE_LEN, "The payload is too large");
+
+		// Toggle the LED
+		digitalWrite(led_pin, led_state);
+		led_state = !led_state;
+
+		// Send the payload
+		rf95.send((uint8_t*)payload, strlen(payload));
+		THREAD_SLEEP(170);
+		rf95.waitPacketSent();
 	#endif
 
 	delay(500);
