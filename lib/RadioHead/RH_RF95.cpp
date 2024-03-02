@@ -137,7 +137,9 @@ bool RH_RF95::setupInterruptHandler()
 		return false; // Too many devices, not enough interrupt vectors
 	}
 	_deviceForInterrupt[_myInterruptIndex] = this;
-	
+	Serial.println("RH_RF95::setupInterruptHandler _myInterruptIndex: ");
+    Serial.println(_myInterruptIndex);
+
 	if (_myInterruptIndex == 0)
 	    attachInterrupt(interruptNumber, isr0, RISING);
 	else if (_myInterruptIndex == 1)

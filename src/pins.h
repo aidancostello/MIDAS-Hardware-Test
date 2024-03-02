@@ -44,3 +44,9 @@
 #define GNSS_I2C_LOCATION 0x3A
 #define GPS_RESET 017
 #define GPS_ENABLE 0
+
+// Telemetry radio
+//kicad is wrong
+#define TELEMETRY_CS 1
+#define TELEMETRY_INT 7
+#define TELEMETRY_RESET 15
