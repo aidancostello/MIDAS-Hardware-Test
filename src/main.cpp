@@ -30,9 +30,11 @@
 // #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
 // #define ENABLE_EMMC
-#define ENABLE_ADS
+// #define ENABLE_ADS
 // #define ENABLE_GPIOEXP
- #define ENABLE_GPS
+// #define ENABLE_GPS
+//#define ENABLE_TElEMETRY
+
 
 
 #ifdef ENABLE_BAROMETER
@@ -72,7 +74,7 @@ TeseoLIV3F teseo(&Wire, GPS_RESET, GPS_ENABLE);
 #endif
 
 #ifdef ENABLE_TElEMETRY
-	RH_RF95 rf95;
+	 RH_RF95 rf95 (1,15);
 
 #endif
 
@@ -317,7 +319,10 @@ void setup() {
 
 	#ifdef ENABLE_TElEMETRY
 		rf95.init();
-		rf95.setFrequency(915.0);
+		rf95.setFrequency(433.0);
+
+		pinMode(7, OUTPUT);
+		digitalWrite(7, HIGH);
 		rf95.setTxPower(23, false);
 	#endif
 }
@@ -478,24 +483,14 @@ void loop() {
 	#endif
 
 	#ifdef ENABLE_TElEMETRY
-	/ Define the payload as a string
-		const char* payload = "hi";
-
-		// Assuming led_pin and led_state are defined somewhere in your code
-		// Assuming THREAD_SLEEP is a macro or function defined somewhere in your code
-		// Assuming rf95 is an instance of RH_RF95
-
-		// Use static_assert to check the size of the payload
-		static_assert(strlen(payload) <= RH_RF95_MAX_MESSAGE_LEN, "The payload is too large");
-
-		// Toggle the LED
-		digitalWrite(led_pin, led_state);
-		led_state = !led_state;
+		Serial.println("Sending...");
+		const char* payload = "Hello World!";
 
 		// Send the payload
 		rf95.send((uint8_t*)payload, strlen(payload));
-		THREAD_SLEEP(170);
+		Serial.println("Sending...");
 		rf95.waitPacketSent();
+		Serial.println("Sent");
 	#endif
 
 	delay(500);
