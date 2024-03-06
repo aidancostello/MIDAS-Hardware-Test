@@ -26,7 +26,7 @@
 // #define ENABLE_LOWG
 // #define ENABLE_LOWGLSM
 // #define ENABLE_MAGNETOMETER
-// #define ENABLE_ORIENTATION
+#define ENABLE_ORIENTATION
 // #define ENABLE_EMMC
 // #define ENABLE_ADS
 // #define ENABLE_GPIOEXP
@@ -55,7 +55,7 @@
 #endif
 
 #ifdef ENABLE_ORIENTATION
-	Adafruit_BNO08x imu(07);
+	Adafruit_BNO08x imu(GpioAddress(1, 07));
 #endif
 
 #ifdef ENABLE_EMMC
@@ -146,6 +146,10 @@ void setup() {
 	digitalWrite(CAN_CS, HIGH);
 	digitalWrite(RFM96W_CS, HIGH);
 
+	// delay(1);
+	// digitalWrite(KX134_CS, HIGH);
+	// delay(1);
+	// digitalWrite(KX134_CS, LOW);
 
 	#ifdef ENABLE_BAROMETER
 		MS.init();
@@ -556,4 +560,4 @@ void loop() {
 	#endif
 	delay(500);
 }
-
+// 1, 0, 1
