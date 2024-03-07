@@ -22,11 +22,11 @@
 
 // #define MCU_TEST
 // #define ENABLE_BAROMETER
-// #define ENABLE_HIGHG
+#define ENABLE_HIGHG
 // #define ENABLE_LOWG
 // #define ENABLE_LOWGLSM
 // #define ENABLE_MAGNETOMETER
-#define ENABLE_ORIENTATION
+// #define ENABLE_ORIENTATION
 // #define ENABLE_EMMC
 // #define ENABLE_ADS
 // #define ENABLE_GPIOEXP
@@ -125,6 +125,15 @@ void setup() {
     Serial.println("Starting I2C...");
     Wire.begin(I2C_SDA, I2C_SCL);
 
+
+	// gpioPinMode(GpioAddress(2,013), OUTPUT);
+	// gpioDigitalWrite(GpioAddress(2,013), HIGH);
+	// gpioPinMode(GpioAddress(2,014), OUTPUT);
+	// gpioDigitalWrite(GpioAddress(2,014), HIGH);
+	// gpioPinMode(GpioAddress(2,015), OUTPUT);
+	// gpioDigitalWrite(GpioAddress(2,015), HIGH);
+	// gpioPinMode(GpioAddress(2,016), OUTPUT);
+	// gpioDigitalWrite(GpioAddress(2,016), HIGH);
 
 	Serial.println("beginning sensor test");
 
