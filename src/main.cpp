@@ -1,6 +1,6 @@
 /* basic testing script for midas board bringup. tests spi sensors as well as emmc chip */
 
-#include <Arduino.h>
+#include <Arduino.h
 #include <SPI.h>
 #include <Wire.h>
 #include <FS.h>
@@ -17,14 +17,14 @@
 
 #include <MS5611.h>
 #include <SparkFun_Qwiic_KX13X.h>
-#include <PL_ADXL355.h>
+#include <PL_ADXL355.h>`
 #include <Arduino_LSM6DS3.h>
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_BNO08x.h>
 
 // #define MCU_TEST
 // #define ENABLE_BAROMETER
-// #define ENABLE_HIGHG
+#define ENABLE_HIGHG
 // #define ENABLE_LOWG
 // #define ENABLE_LOWGLSM
 // #define ENABLE_MAGNETOMETER
@@ -34,6 +34,7 @@
 // #define ENABLE_GPIOEXP
 // #define ENABLE_GPS
 #define ENABLE_TElEMETRY
+// #define ENABLE_ADV_GPIO_TEST
 
 
 
@@ -73,8 +74,25 @@
 TeseoLIV3F teseo(&Wire, GPS_RESET, GPS_ENABLE);
 #endif
 
+
 #ifdef ENABLE_TElEMETRY
 	 RH_RF95 rf95 (TELEMETRY_CS,TELEMETRY_INT);
+#endif
+
+#ifdef ENABLE_ADV_GPIO_TEST
+enum class State {
+  WAITING,
+  ACTIVATE,
+  ACTIVE,
+};
+
+State currentState = State::WAITING;
+
+int expander = 0;
+int channel = 1;
+int highlow = 0;
+bool bypass = false;
+String bypassMessage;
 
 #endif
 
@@ -90,7 +108,6 @@ void setup() {
 
     Serial.println("Starting I2C...");
     Wire.begin(I2C_SDA, I2C_SCL);
-
 
 	Serial.println("beginning sensor test");
 
@@ -138,25 +155,6 @@ void setup() {
 		Serial.println("Initializing lowg");
 		sensor.enableMeasurement();
 
-		// if (sensor.isDeviceRecognized()){
-		// 	Serial.println("Device is recognized");
-		// 	sensor.initializeSensor(Adxl355::RANGE_VALUES::RANGE_2G, Adxl355::ODR_LPF::ODR_1000_AND_250);
-		// 	Serial.println("Sensor is initialized");
-		// 	if (Adxl355::RANGE_VALUES::RANGE_2G != sensor.getRange()){
-		// 		Serial.println("could not set range lowg");
-		// 		while(1);
-		// 	}
-
-		// 	if (Adxl355::ODR_LPF::ODR_4000_AND_1000 != sensor.getOdrLpf()){
-		// 		Serial.println("could not set odrlpf lowg");
-		// 		while(1);
-		// 	}
-		// }
-		// else{
-		// 	Serial.println("could not init lowg");
-		// 	while(1);
-		// }
-   		// sensor.calibrateSensor(1);
 		Serial.println("lowg init successfully");
 	#endif
 
@@ -181,14 +179,8 @@ void setup() {
 
 	#ifdef ENABLE_ORIENTATION
 
-		/*if (!TCAL9539Init()) {
-			Serial.println("Failed to initialize TCAL9539!");
-			// while(1){ };
-		}
-
-		Serial.println("TCAL9539 initialized successfully!");*/
 		Serial.println("Delaying");
-		delay(5000);
+		delay(1000);
 
 		if (!imu.begin_SPI(BNO086_CS, BNO086_INT)) {
 			Serial.println("could not init orientation");
@@ -207,7 +199,7 @@ void setup() {
 			Serial.println("Pin change failed!");
 			return;
 		}
-		// if(!SD_MMC.begin()){
+
 		if(!SD_MMC.begin("/sdcard", false, true, SDMMC_FREQ_52M, 5)){
 			Serial.println("Card Mount Failed");
 			return;
@@ -332,7 +324,16 @@ void setup() {
 		rf95.setFrequency(433.0);
 		rf95.setTxPower(23, false);
 		sei();
+  #endif
 
+	#ifdef ENABLE_ADV_GPIO_TEST
+	delay(1000);
+	Serial.println("--------------------------------------------------------------------------");
+	Serial.println("To use, enter into terminal in the format \"expander, channel, signal\"");
+	Serial.println("Valid expanders: 0-2, valid channels: 1-16, valid signals: 0/1");
+	if (!TCAL9539Init()) {
+		Serial.println("Failed to initialize TCAL9539!");
+	}
 	#endif
 }
 
@@ -505,6 +506,59 @@ void loop() {
 		}
 	#endif
 
+	#ifdef ENABLE_ADV_GPIO_TEST // serial monitor format: "expander, channel, signal", only accepts this format, unknown behavior otherwise (todo)
+	switch (currentState) {
+		case State::WAITING:
+			if (Serial.available() > 0 || bypass) {
+				String message;
+				if (bypass) {
+					message = bypassMessage;
+				} else {
+					message = Serial.readStringUntil('\n');
+				}
+				int numbers[3];
+				// this for loop strictly only parses format "num, num, num"
+				for (int i = 0; i < 2; i++) {
+					int commaIndex = message.indexOf(",");
+					String numberString = message.substring(0, commaIndex);
+					numbers[i] = numberString.toInt();
+					message.remove(0, commaIndex + 2);
+				}
+				String numberString = message.substring(0, message.length());
+				numbers[2] = numberString.toInt();
+				message.remove(0, message.length());
+				expander = numbers[0];
+				channel = numbers[1];
+				highlow = numbers[2];
+				Serial.println("expander: " + String(expander) + ", channel: " + String(channel) + ", signal: " + String(highlow));
+				currentState = State::ACTIVATE;
+				break;
+			}
+			break;
+		case State::ACTIVATE:
+			gpioPinMode(GpioAddress(expander, channel), OUTPUT);
+			delay(100);
+			gpioDigitalWrite(GpioAddress(expander, channel), highlow);
+			currentState = State::ACTIVE;
+		case State::ACTIVE:
+			if (Serial.available() > 0) {
+				String message = Serial.readStringUntil('\n');
+				if (message.equals("WAIT")) {
+					Serial.println("State: WAIT");
+					currentState = State::WAITING;
+					bypass = false;
+					//   gpioDigitalWrite(GpioAddress(expander, channel), 0); // uncomment to reset channel back to zero after use
+					break;
+				} else {
+					currentState = State::WAITING;
+					bypass = true;
+					bypassMessage = message;
+					//   gpioDigitalWrite(GpioAddress(expander, channel), 0); // uncomment to reset channel back to zero after use
+				}
+			}
+			break;
+	}
+	#endif
+
 	delay(500);
 }
-
