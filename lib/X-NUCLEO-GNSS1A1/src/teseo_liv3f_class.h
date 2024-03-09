@@ -45,6 +45,7 @@
 #include "teseo.h"
 #include "gnss_parser.h"
 #include "NMEA_parser.h"
+#include "TCAL9539.h"
 
 #define DEFAULT_BUS 0
 #define DEFAULT_I2C NULL
@@ -95,13 +96,16 @@ public:
 
    TeseoLIV3F(TwoWire *i2c, int resetPin, int enablePin) : dev_i2c(i2c), pinRes(resetPin), pinEn(enablePin)
    {
-      pinMode(pinRes, OUTPUT);
-      pinMode(pinEn, OUTPUT);
+      Serial.println("Initing gpio");
+      gpioPinMode(GpioAddress(2, 017), OUTPUT);
+
+      //pinMode(pinEn, OUTPUT);
       useI2C = 1;
       i2ch.stringComplete = false;
       i2ch.index = 0;
       i2ch.end = 0;
       commandDone = 1;
+      Serial.println("Couldnt init gpio");
    }
 
    TeseoLIV3F(HardwareSerial *uart, int resetPin, int enablePin) : dev_uart(uart), pinRes(resetPin), pinEn(enablePin)
@@ -121,10 +125,12 @@ public:
     */
    GNSS_StatusTypeDef init()
    {
-      digitalWrite(pinRes, LOW);
+      gpioDigitalWrite(GpioAddress(2, 017), LOW);
+      Serial.println("Ressetting GPS");
       delay(1000);
-      digitalWrite(pinRes, HIGH);
+      gpioDigitalWrite(GpioAddress(2, 017), HIGH);
       delay(5000);
+      Serial.println("Resetted GPS");
       GNSS_PARSER_Init(&data);
       if (useI2C)
       {
@@ -139,6 +145,7 @@ public:
       }
       sendCommand((char *)"$PSTMRESTOREPAR");
       sendCommand((char *)"$PSTMSRR");
+      Wire.endTransmission(false);
       delay(4000);
       return GNSS_OK;
    }

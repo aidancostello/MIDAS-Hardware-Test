@@ -59,6 +59,7 @@ AdcReadResult adcAnalogRead(ADCAddress pin){
     int high = WIRE.read();
     int low = WIRE.read();
     uint16_t value = (high << 4) + (low >> 4);
+
     return AdcReadResult{.value=value, .error=AdcError::NoError};
 }
 
