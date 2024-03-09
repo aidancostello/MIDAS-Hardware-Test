@@ -100,16 +100,6 @@ void setup() {
     Serial.println("Starting I2C...");
     Wire.begin(I2C_SDA, I2C_SCL);
 
-
-	// gpioPinMode(GpioAddress(2,013), OUTPUT);
-	// gpioDigitalWrite(GpioAddress(2,013), HIGH);
-	// gpioPinMode(GpioAddress(2,014), OUTPUT);
-	// gpioDigitalWrite(GpioAddress(2,014), HIGH);
-	// gpioPinMode(GpioAddress(2,015), OUTPUT);
-	// gpioDigitalWrite(GpioAddress(2,015), HIGH);
-	// gpioPinMode(GpioAddress(2,016), OUTPUT);
-	// gpioDigitalWrite(GpioAddress(2,016), HIGH);
-
 	Serial.println("beginning sensor test");
 
 	pinMode(MS5611_CS, OUTPUT);
@@ -130,10 +120,6 @@ void setup() {
 	digitalWrite(CAN_CS, HIGH);
 	digitalWrite(RFM96W_CS, HIGH);
 
-	// delay(1);
-	// digitalWrite(KX134_CS, HIGH);
-	// delay(1);
-	// digitalWrite(KX134_CS, LOW);
 
 	#ifdef ENABLE_BAROMETER
 		MS.init();
@@ -160,25 +146,6 @@ void setup() {
 		Serial.println("Initializing lowg");
 		sensor.enableMeasurement();
 
-		// if (sensor.isDeviceRecognized()){
-		// 	Serial.println("Device is recognized");
-		// 	sensor.initializeSensor(Adxl355::RANGE_VALUES::RANGE_2G, Adxl355::ODR_LPF::ODR_1000_AND_250);
-		// 	Serial.println("Sensor is initialized");
-		// 	if (Adxl355::RANGE_VALUES::RANGE_2G != sensor.getRange()){
-		// 		Serial.println("could not set range lowg");
-		// 		while(1);
-		// 	}
-
-		// 	if (Adxl355::ODR_LPF::ODR_4000_AND_1000 != sensor.getOdrLpf()){
-		// 		Serial.println("could not set odrlpf lowg");
-		// 		while(1);
-		// 	}
-		// }
-		// else{
-		// 	Serial.println("could not init lowg");
-		// 	while(1);
-		// }
-   		// sensor.calibrateSensor(1);
 		Serial.println("lowg init successfully");
 	#endif
 
@@ -203,14 +170,8 @@ void setup() {
 
 	#ifdef ENABLE_ORIENTATION
 
-		/*if (!TCAL9539Init()) {
-			Serial.println("Failed to initialize TCAL9539!");
-			// while(1){ };
-		}
-
-		Serial.println("TCAL9539 initialized successfully!");*/
 		Serial.println("Delaying");
-		delay(5000);
+		delay(1000);
 
 		if (!imu.begin_SPI(BNO086_CS, BNO086_INT)) {
 			Serial.println("could not init orientation");
@@ -229,7 +190,7 @@ void setup() {
 			Serial.println("Pin change failed!");
 			return;
 		}
-		// if(!SD_MMC.begin()){
+
 		if(!SD_MMC.begin("/sdcard", false, true, SDMMC_FREQ_52M, 5)){
 			Serial.println("Card Mount Failed");
 			return;
@@ -560,4 +521,3 @@ void loop() {
 	#endif
 	delay(500);
 }
-// 1, 0, 1
