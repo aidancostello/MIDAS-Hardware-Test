@@ -1,11 +1,12 @@
 /* basic testing script for midas board bringup. tests spi sensors as well as emmc chip */
 
-#include <Arduino.h>
+#include <Arduino.h
 #include <SPI.h>
 #include <Wire.h>
 #include <FS.h>
 #include <SD_MMC.h>
 #include <MicroNMEA.h>
+#include <RH_RF95.h>
 
 #include "pins.h"
 #include "bno_functions.h"
@@ -16,7 +17,7 @@
 
 #include <MS5611.h>
 #include <SparkFun_Qwiic_KX13X.h>
-#include <PL_ADXL355.h>
+#include <PL_ADXL355.h>`
 #include <Arduino_LSM6DS3.h>
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_BNO08x.h>
@@ -32,7 +33,9 @@
 // #define ENABLE_ADS
 // #define ENABLE_GPIOEXP
 // #define ENABLE_GPS
+#define ENABLE_TElEMETRY
 // #define ENABLE_ADV_GPIO_TEST
+
 
 
 #ifdef ENABLE_BAROMETER
@@ -71,6 +74,11 @@
 TeseoLIV3F teseo(&Wire, GPS_RESET, GPS_ENABLE);
 #endif
 
+
+#ifdef ENABLE_TElEMETRY
+	 RH_RF95 rf95 (TELEMETRY_CS,TELEMETRY_INT);
+#endif
+
 #ifdef ENABLE_ADV_GPIO_TEST
 enum class State {
   WAITING,
@@ -85,6 +93,7 @@ int channel = 1;
 int highlow = 0;
 bool bypass = false;
 String bypassMessage;
+
 #endif
 
 void setup() {
@@ -300,6 +309,23 @@ void setup() {
 	}
 	#endif
 
+	#ifdef ENABLE_TElEMETRY
+		pinMode(TELEMETRY_RESET, OUTPUT); //reset pin for RFM96W
+		digitalWrite(TELEMETRY_RESET, HIGH);
+		delay(100);
+		digitalWrite(TELEMETRY_RESET, LOW);
+		delay(100);
+		digitalWrite(TELEMETRY_RESET, HIGH);
+		delay(5);
+		
+
+		//rf95.init();
+		Serial.println(rf95.init());
+		rf95.setFrequency(433.0);
+		rf95.setTxPower(23, false);
+		sei();
+  #endif
+
 	#ifdef ENABLE_ADV_GPIO_TEST
 	delay(1000);
 	Serial.println("--------------------------------------------------------------------------");
@@ -466,6 +492,20 @@ void loop() {
 	#ifdef ENABLE_GPIOEXP
 	#endif
 
+	#ifdef ENABLE_TElEMETRY
+		//Serial.println("Sending...");
+		const char* payload = "Hello World!";
+
+		// Send the payload
+		while (true){
+			rf95.send((uint8_t*)payload, strlen(payload));
+			Serial.println("Sending...");
+			rf95.waitPacketSent();
+			Serial.println("Sent");
+			delay(500);
+		}
+	#endif
+
 	#ifdef ENABLE_ADV_GPIO_TEST // serial monitor format: "expander, channel, signal", only accepts this format, unknown behavior otherwise (todo)
 	switch (currentState) {
 		case State::WAITING:
@@ -519,5 +559,6 @@ void loop() {
 			break;
 	}
 	#endif
+
 	delay(500);
 }
