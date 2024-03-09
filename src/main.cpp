@@ -58,7 +58,7 @@
 #endif
 
 #ifdef ENABLE_ORIENTATION
-	Adafruit_BNO08x imu(07);
+	Adafruit_BNO08x imu(GpioAddress(1, 07));
 #endif
 
 #ifdef ENABLE_EMMC
