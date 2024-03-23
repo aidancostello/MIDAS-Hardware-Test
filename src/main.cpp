@@ -22,12 +22,13 @@
 
 // #define MCU_TEST
 // #define ENABLE_BAROMETER
-#define ENABLE_HIGHG
+//#define ENABLE_HIGHG
 // #define ENABLE_LOWG
 // #define ENABLE_LOWGLSM
 // #define ENABLE_MAGNETOMETER
 // #define ENABLE_ORIENTATION
 // #define ENABLE_EMMC
+#define ENABLE_SD
 // #define ENABLE_ADS
 // #define ENABLE_GPIOEXP
 // #define ENABLE_GPS
@@ -60,6 +61,12 @@
 
 #ifdef ENABLE_EMMC
 	uint8_t buff[8192];
+#endif
+
+#ifdef ENABLE_SD
+    #define SD_CLK 5
+    #define SD_CMD 4
+    #define SD_D0 6
 #endif
 
 #ifdef ENABLE_GPIOEXP
@@ -255,7 +262,7 @@ void setup() {
 			return;
 		}
 		// if(!SD_MMC.begin()){
-		if(!SD_MMC.begin("/sdcard", false, true, SDMMC_FREQ_52M, 5)){
+		if(!SD_MMC.begin("/sdcard", false, false, SDMMC_FREQ_52M, 5)){
 			Serial.println("Card Mount Failed");
 			return;
 		}
@@ -281,19 +288,19 @@ void setup() {
 		Serial.print("SD_MMC Card Size: ");
 		Serial.print(cardSize);
 		Serial.println("MB");
-		File f = SD_MMC.open("/midas.txt", FILE_WRITE, true);
-		auto m1 = micros();
-		std::fill(buff, buff + 8192, 'q');
-		for(int i = 0; i < 10; i++){
-			f.write(buff, 8192);
-		}
-		Serial.println(micros() - m1);
-		f.close();
+//		File f = SD_MMC.open("/midas.txt", FILE_WRITE, true);
+//		auto m1 = micros();
+//		std::fill(buff, buff + 8192, 'q');
+//		for(int i = 0; i < 10; i++){
+//			f.write(buff, 8192);
+//		}
+//		Serial.println(micros() - m1);
+//		f.close();
 		// listDir(SD_MMC, "/", 0);
 		// createDir(SD_MMC, "/mydir");
 		// listDir(SD_MMC, "/", 0);
 		// removeDir(SD_MMC, "/mydir");
-		// listDir(SD_MMC, "/", 2);
+		 listDir(SD_MMC, "/", 2);
 		// writeFile(SD_MMC, "/hello.txt", "Hello ");
 		// appendFile(SD_MMC, "/hello.txt", "World!\n");
 		// readFile(SD_MMC, "/hello.txt");
@@ -304,6 +311,62 @@ void setup() {
 		Serial.printf("Total space: %lluMB\n", SD_MMC.totalBytes() / (1024 * 1024));
 		Serial.printf("Used space: %lluMB\n", SD_MMC.usedBytes() / (1024 * 1024));
 	#endif
+
+    #ifdef ENABLE_SD
+        if(!SD_MMC.setPins(SD_CLK, SD_CMD, SD_D0)){
+            Serial.println("Pin change failed!");
+            return;
+        }
+        // if(!SD_MMC.begin()){
+        if(!SD_MMC.begin("/sd", true, true, SDMMC_FREQ_52M, 5)){
+            Serial.println("Card Mount Failed");
+            return;
+        }
+        uint8_t cardType = SD_MMC.cardType();
+
+        if(cardType == CARD_NONE){
+            Serial.println("No SD_MMC card attached");
+            return;
+        }
+
+        Serial.print("SD_MMC Card Type: ");
+        if(cardType == CARD_MMC){
+            Serial.println("MMC");
+        } else if(cardType == CARD_SD){
+            Serial.println("SDSC");
+        } else if(cardType == CARD_SDHC){
+            Serial.println("SDHC");
+        } else {
+            Serial.println("UNKNOWN");
+        }
+
+        uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
+        Serial.print("SD_MMC Card Size: ");
+        Serial.print(cardSize);
+        Serial.println("MB");
+//		File f = SD_MMC.open("/midas.txt", FILE_WRITE, true);
+//		auto m1 = micros();
+//		std::fill(buff, buff + 8192, 'q');
+//		for(int i = 0; i < 10; i++){
+//			f.write(buff, 8192);
+//		}
+//		Serial.println(micros() - m1);
+//		f.close();
+        listDir(SD_MMC, "/", 0);
+        createDir(SD_MMC, "/mydir");
+        listDir(SD_MMC, "/", 0);
+        removeDir(SD_MMC, "/mydir");
+        listDir(SD_MMC, "/", 2);
+        writeFile(SD_MMC, "/hello.txt", "Hello ");
+        appendFile(SD_MMC, "/hello.txt", "World!\n");
+        readFile(SD_MMC, "/hello.txt");
+        deleteFile(SD_MMC, "/foo.txt");
+        renameFile(SD_MMC, "/hello.txt", "/foo.txt");
+        readFile(SD_MMC, "/foo.txt");
+        testFileIO(SD_MMC, "/test.txt");
+        Serial.printf("Total space: %lluMB\n", SD_MMC.totalBytes() / (1024 * 1024));
+        Serial.printf("Used space: %lluMB\n", SD_MMC.usedBytes() / (1024 * 1024));
+    #endif
 
 	#ifdef ENABLE_ADS
 		if (!ADS7138Init()) {
