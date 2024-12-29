@@ -1,6 +1,6 @@
 /* basic testing script for midas board bringup. tests spi sensors as well as emmc chip */
 
-#include <Arduino.h
+#include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <FS.h>
@@ -17,14 +17,17 @@
 
 #include <MS5611.h>
 #include <SparkFun_Qwiic_KX13X.h>
-#include <PL_ADXL355.h>`
+#include <PL_ADXL355.h>
 #include <Arduino_LSM6DS3.h>
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_BNO08x.h>
 
+#include <ACAN2517FD.h>
+#include <ACAN2517FDSettings.h>
+
 // #define MCU_TEST
 // #define ENABLE_BAROMETER
-#define ENABLE_HIGHG
+// #define ENABLE_HIGHG
 // #define ENABLE_LOWG
 // #define ENABLE_LOWGLSM
 // #define ENABLE_MAGNETOMETER
@@ -33,10 +36,15 @@
 // #define ENABLE_ADS
 // #define ENABLE_GPIOEXP
 // #define ENABLE_GPS
-#define ENABLE_TElEMETRY
+// #define ENABLE_TElEMETRY
 // #define ENABLE_ADV_GPIO_TEST
+#define ENABLE_CAN
 
-
+#ifdef ENABLE_CAN
+	ACAN2517FD can (CAN_CS, SPI, 0) ; // You can use SPI2, SPI3, if provided by your microcontroller
+	static unsigned gSendDate = 0 ;
+	static unsigned gSentCount = 0 ;
+#endif
 
 #ifdef ENABLE_BAROMETER
 	MS5611 MS(MS5611_CS);
@@ -79,6 +87,12 @@ TeseoLIV3F teseo(&Wire, GPS_RESET, GPS_ENABLE);
 	 RH_RF95 rf95 (TELEMETRY_CS,TELEMETRY_INT);
 #endif
 
+#ifdef CAN_ENABLE
+	// CAN can be enabled here
+	ACAN2517FD can (CAN_CS, SPI, CAN_INT);
+#endif
+
+
 #ifdef ENABLE_ADV_GPIO_TEST
 enum class State {
   WAITING,
@@ -104,7 +118,7 @@ void setup() {
 	delay(1000);
 
 	Serial.println("Starting SPI...");
-    SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+    SPI.begin(SPI_SCK, SPI_MOSI, SPI_MISO);
 
     Serial.println("Starting I2C...");
     Wire.begin(I2C_SDA, I2C_SCL);
@@ -129,6 +143,45 @@ void setup() {
 	digitalWrite(CAN_CS, HIGH);
 	digitalWrite(RFM96W_CS, HIGH);
 
+	#ifdef ENABLE_CAN
+
+		// I like having flashing lights.
+		if (!TCAL9539Init()) {
+			Serial.println("Failed to initialize TCAL9539!");
+			// while(1){ };
+		}
+
+		Serial.println("TCAL9539 initialized successfully!");
+
+		gpioPinMode(GpioAddress(2, 013), OUTPUT);
+		gpioPinMode(GpioAddress(2, 014), OUTPUT);
+		gpioPinMode(GpioAddress(2, 015), OUTPUT);
+		gpioPinMode(GpioAddress(2, 016), OUTPUT);
+
+		Serial.println("TCAL9539 successfully set pinmode!");
+
+
+      	Serial.println("MIDAS: Initializing CAN Controller");
+
+		pinMode(CAN_CS, OUTPUT);
+		gpioPinMode(GpioAddress(2, CAN_INT), INPUT);
+		gpioPinMode(GpioAddress(2, CAN_FAULT), INPUT);
+		// pinMode(CAN_SILENT, OUTPUT);
+
+		ACAN2517FDSettings can_settings (ACAN2517FDSettings::OSC_40MHz, 125*1000, DataBitRateFactor::x1  );
+		can_settings.mRequestedMode = ACAN2517FDSettings::InternalLoopBack;
+		
+
+		const uint32_t errorCode = can.begin (can_settings, [] { can.isr () ; }) ;
+		if (0 == errorCode) {
+			Serial.println ("MIDAS: Can ok") ;
+		}else{
+			Serial.print ("MIDAS: Error Can: 0x") ;
+			Serial.println (errorCode, HEX) ;
+		}
+
+
+	#endif
 
 	#ifdef ENABLE_BAROMETER
 		MS.init();
@@ -338,6 +391,108 @@ void setup() {
 }
 
 void loop() {
+
+    #ifdef ENABLE_CAN
+      delay(500);
+
+      Serial.println("Controller phase:");
+      
+
+      CANFDMessage message ;
+      if (gSendDate < millis ()) {
+
+        message.id = 0x542;
+
+        message.len = 8;
+        
+        message.data[0] = 0x01;
+        message.data[1] = 0x23;
+        message.data[2] = 0x45;
+        message.data[3] = 0x67;
+        message.data[4] = 0x89;
+        message.data[5] = 0xAB;
+        message.data[6] = 0xCD;
+        message.data[7] = 0xEF;
+
+		Serial.println("Attempting to send message");
+
+        const bool ok = can.tryToSend (message) ;
+        if (ok) {
+          gSendDate += 1000 ;
+          gSentCount += 1 ;
+          Serial.print ("Sent msg# ") ;
+          Serial.println (gSentCount) ;
+		  gpioDigitalWrite(GpioAddress(2, 014), HIGH);
+		  delay(50);
+		  gpioDigitalWrite(GpioAddress(2, 014), LOW);
+
+        } else {
+          Serial.println("FAILED SEND");
+		  gpioDigitalWrite(GpioAddress(2, 016), HIGH);
+		  delay(50);
+		  gpioDigitalWrite(GpioAddress(2, 016), LOW);
+        }
+
+
+        // // Diagnostic info
+        // Serial.println("Diag info:");
+        // // Read diag register 0
+
+
+        // uint32_t diag0 = can.diagInfos(0);
+        // // extract and print data from diag0 in 8-bit chunks by bitshifting diag0
+        // uint8_t tefl = diag0 & 0xFF;
+        // uint8_t tefh = (diag0 >> 8) & 0xFF;
+        // uint8_t recfl = (diag0 >> 16) & 0xFF;
+        // uint8_t recfh = (diag0 >> 24) & 0xFF;
+
+        // Serial.println(diag0, BIN);
+        // Serial.print(tefl, BIN);
+        // Serial.print(" ");
+        // Serial.print(tefh, BIN);
+        // Serial.print(" ");
+        // Serial.print(recfl, BIN);
+        // Serial.print(" ");
+        // Serial.print(recfh, BIN);
+        // Serial.print(" ");
+
+
+
+        // Serial.printf("Diag 0: %d %d %d %d\n", tefl, tefh, recfl, recfh);
+
+
+
+        // // Read diag register 1
+        // uint32_t diag1 = can.diagInfos(1);
+        // // extract and print data from diag1 in 8-bit chunks by bitshifting diag1
+        // uint16_t nerr = diag1 & 0xFFFF;
+        // uint16_t rest = (diag1 >> 16) & 0xFFFF;
+
+        // Serial.printf("Diag 0: %d ", nerr);
+
+        // Serial.println(rest, BIN);
+
+      }
+
+      if (can.receive (message)) {
+        Serial.print ("CAN Received: ") ;
+        Serial.printf("%d%d%d%d%d%d%d%d\n", message.data[0], message.data[1], message.data[2], message.data[3], message.data[4], message.data[5], message.data[6], message.data[7]);
+      }
+
+      Serial.println("Transciever phase:");
+
+      bool can_fault = gpioDigitalRead(GpioAddress(2, CAN_FAULT)).value;
+      if(can_fault) {
+        Serial.println("CAN Fault");
+        gpioDigitalWrite(GpioAddress(2, 016), HIGH);
+		delay(1000);
+
+      } else {
+        gpioDigitalWrite(GpioAddress(2, 016), LOW);
+      }
+
+
+    #endif
 
 	#ifdef ENABLE_GPIOEXP
 

@@ -17,6 +17,11 @@
 // low g chip select
 #define ADXL355_CS 0
 
+// Can chip select, interrupt
+#define CAN_CS 45
+#define CAN_INT 011 // GPIOEXP 2
+#define CAN_FAULT 06 // GPIOEXP 2
+
 // magnetometer chip select
 #define LIS3MDL_CS 9
 
