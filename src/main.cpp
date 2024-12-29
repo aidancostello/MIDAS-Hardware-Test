@@ -38,7 +38,9 @@
 // #define ENABLE_GPS
 // #define ENABLE_TElEMETRY
 // #define ENABLE_ADV_GPIO_TEST
-#define ENABLE_CAN
+// #define ENABLE_CAN
+#define ENABLE_PWR_MONITOR
+
 
 #ifdef ENABLE_CAN
 	ACAN2517FD can (CAN_CS, SPI, 0) ; // You can use SPI2, SPI3, if provided by your microcontroller
@@ -390,7 +392,39 @@ void setup() {
 	#endif
 }
 
+int read_reg(int reg, int bytes) {
+    Wire.beginTransmission(0x44);
+    Wire.write(reg);
+    if(Wire.endTransmission()){
+        Serial.println("I2C Error");
+    }
+    Wire.requestFrom(0x40, bytes);
+    int val = 0;
+    for(int i = 0; i < bytes; i++){
+        int v = Wire.read();
+        if(v == -1) Serial.println("I2C Read Error");
+        val = (val << 8) | v;
+    }
+    return val;
+}
+
+
 void loop() {
+
+	#ifdef ENABLE_PWR_MONITOR
+		int power = read_reg(0x8, 3);
+		int current = read_reg(0x7, 2);
+		int temp = read_reg(0x6, 2);
+		int voltage = read_reg(0x5, 2);
+		Serial.print("Voltage ");
+		Serial.println(voltage * 3.125 / 1000.0);
+		Serial.print("Temp ");
+		Serial.println(temp * 125 / 1000.0);
+		Serial.print("Current ");
+		Serial.println(current * 1.2 / 1000.0);
+		Serial.print("Power ");
+		Serial.println(power * 240 / 1000000.0);
+	#endif
 
     #ifdef ENABLE_CAN
       delay(500);

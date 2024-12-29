@@ -14,7 +14,6 @@
 #include <CANMessage.h>
 #include <ACAN2517FDFilters.h>
 #include <SPI.h>
-#include <TCAL9539.h>
 
 //----------------------------------------------------------------------------------------------------------------------
 //   ACAN2517FD class
@@ -28,7 +27,7 @@ class ACAN2517FD {
 
   public: ACAN2517FD (const uint8_t inCS, // CS input of MCP2517FD
                       SPIClass & inSPI, // Hardware SPI object
-                      GpioAddress inINT) ; // INT output of MCP2517FD
+                      const uint8_t inINT) ; // INT output of MCP2517FD
 
 //······················································································································
 //   begin method (returns 0 if no error)
@@ -134,7 +133,7 @@ class ACAN2517FD {
   private: SPISettings mSPISettings ;
   private: SPIClass & mSPI ;
   private: const uint8_t mCS ;
-  private: GpioAddress mINT ;
+  private: const uint8_t mINT ;
   private: bool mUsesTXQ ;
   private: bool mHardwareTxFIFOFull ;
   private: bool mRxInterruptEnabled ; // Added in 2.1.7
